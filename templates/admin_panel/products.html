@@ -1,0 +1,148 @@
+{% extends 'base.html' %}
+{% block title %}Admin Panel{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header"><h5>Mahsulot qo'shish</h5></div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_product" value="1">
+                    {{ product_form.as_p }}
+                    <p><label>Qo'shimcha rasm 1:</label>{{ product_form.extra_image_1 }}</p>
+                    <p><label>Qo'shimcha rasm 2:</label>{{ product_form.extra_image_2 }}</p>
+                    <p><label>Qo'shimcha rasm 3:</label>{{ product_form.extra_image_3 }}</p>
+                    <p><label>Qo'shimcha rasm 4:</label>{{ product_form.extra_image_4 }}</p>
+                    <button type="submit" class="btn btn-primary w-100">Qo'shish</button>
+                </form>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-header"><h5>Kategoriya qo'shish</h5></div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_category" value="1">
+                    {{ category_form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100">Qo'shish</button>
+                </form>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header"><h5>Kategoriyalar</h5></div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for cat in categories %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            {{ cat.name }}
+                            <form method="post" class="m-0">
+                                {% csrf_token %}
+                                <input type="hidden" name="category_id" value="{{ cat.id }}">
+                                <input type="hidden" name="delete_category" value="1">
+                                <button type="submit" class="btn btn-sm btn-danger">O'chirish</button>
+                            </form>
+                        </li>
+                    {% empty %}
+                        <li class="list-group-item">Kategoriya yo'q</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <h4>Mahsulotlar</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Rasm</th>
+                    <th>Nomi</th>
+                    <th>Narx</th>
+                    <th>Kategoriya</th>
+                    <th>Amallar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                <tr>
+                    <td>
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" width="50" height="50" style="object-fit: cover;">
+                        {% endif %}
+                    </td>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.price|floatformat:0 }} $</td>
+                    <td>{{ product.category.name|default:"-" }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#editModal{{ product.id }}">Tahrirlash</button>
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="product_id" value="{{ product.id }}">
+                            <input type="hidden" name="delete_product" value="1">
+                            <button type="submit" class="btn btn-sm btn-danger">O'chirish</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5">Mahsulot yo'q</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% for product in products %}
+<div class="modal fade" id="editModal{{ product.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header"><h5>Tahrirlash: {{ product.name }}</h5></div>
+            <div class="modal-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <input type="hidden" name="edit_product" value="1">
+                    <input type="hidden" name="product_id" value="{{ product.id }}">
+                    <p><label>Nomi:</label><input type="text" name="name" value="{{ product.name }}" class="form-control"></p>
+                    <p><label>Narx:</label><input type="number" name="price" value="{{ product.price }}" step="0.01" class="form-control"></p>
+                    <p><label>Asosiy rasm:</label><input type="file" name="image" class="form-control"></p>
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" height="80" style="object-fit: cover;">
+                    {% endif %}
+                    <p><label>Qo'shimcha rasm 1:</label><input type="file" name="extra_image_1" class="form-control"></p>
+                    <p><label>Qo'shimcha rasm 2:</label><input type="file" name="extra_image_2" class="form-control"></p>
+                    <p><label>Qo'shimcha rasm 3:</label><input type="file" name="extra_image_3" class="form-control"></p>
+                    <p><label>Qo'shimcha rasm 4:</label><input type="file" name="extra_image_4" class="form-control"></p>
+                    <p><label>Izoh:</label><textarea name="description" class="form-control" rows="3">{{ product.description }}</textarea></p>
+                    <p><label>Kategoriya:</label>
+                        <select name="category" class="form-control">
+                            <option value="">--</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}" {% if product.category_id == cat.id %}selected{% endif %}>{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </p>
+                    <button type="submit" class="btn btn-primary w-100">Saqlash</button>
+                </form>
+                {% with images=product.images.all %}
+                    {% if images %}
+                        <hr>
+                        <h6>Yuklangan qo'shimcha rasmlar:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for img in images %}
+                                <div class="text-center">
+                                    <img src="{{ img.image.url }}" height="60" style="object-fit: cover;">
+                                    <form method="post" class="mt-1">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="image_id" value="{{ img.id }}">
+                                        <input type="hidden" name="delete_image" value="1">
+                                        <button type="submit" class="btn btn-sm btn-danger">O'chirish</button>
+                                    </form>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+{% with extra_images=product.images.all %}
+<div class="row">
+    <div class="col-md-6">
+        {% if product.image or extra_images %}
+            <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                <div class="carousel-inner rounded">
+                    {% if product.image %}
+                        <div class="carousel-item active">
+                            <img src="{{ product.image.url }}" class="d-block w-100" alt="{{ product.name }}" style="height: 500px; object-fit: cover;">
+                        </div>
+                    {% endif %}
+                    {% for img in extra_images %}
+                        <div class="carousel-item {% if not product.image and forloop.first %}active{% endif %}">
+                            <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ product.name }}" style="height: 500px; object-fit: cover;">
+                        </div>
+                    {% endfor %}
+                </div>
+                {% if product.image or extra_images.count > 0 %}
+                    <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon"></span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon"></span>
+                    </button>
+                {% endif %}
+            </div>
+            {% if product.image or extra_images %}
+                <div class="d-flex gap-2 mt-2 flex-wrap">
+                    {% if product.image %}
+                        <img src="{{ product.image.url }}" class="rounded border" style="height: 90px; width: 90px; object-fit: cover; cursor: pointer;" data-bs-target="#productCarousel" data-bs-slide-to="0">
+                    {% endif %}
+                    {% for img in extra_images %}
+                        <img src="{{ img.image.url }}" class="rounded border" style="height: 90px; width: 90px; object-fit: cover; cursor: pointer;" data-bs-target="#productCarousel" data-bs-slide-to="{% if product.image %}{{ forloop.counter }}{% else %}{{ forloop.counter0 }}{% endif %}">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="bg-secondary rounded d-flex align-items-center justify-content-center" style="height: 500px;">
+                <i class="bi bi-image text-white" style="font-size: 5rem;"></i>
+            </div>
+        {% endif %}
+    </div>
+    <div class="col-md-6">
+        <h1>{{ product.name }}</h1>
+        <p class="text-muted">{{ product.category.name|default:"Kategoriyasiz" }}</p>
+        <h3 class="text-success">{{ product.price|floatformat:0 }} $</h3>
+        <p>{{ product.description }}</p>
+        <p><small>Qo'shilgan: {{ product.created_at|date:"d.m.Y" }}</small></p>
+        {% if user.is_authenticated %}
+            <button class="btn btn-success btn-lg add-to-cart" data-product-id="{{ product.id }}">Add to Cart</button>
+        {% else %}
+            <a href="/login/" class="btn btn-primary btn-lg">Kirish va sotib olish</a>
+        {% endif %}
+    </div>
+</div>
+{% endwith %}
+{% if related_products %}
+    <h3 class="mt-5">O'xshash mahsulotlar</h3>
+    <div class="row">
+        {% for rel in related_products %}
+            <div class="col-md-3 mb-3">
+                <div class="card h-100">
+                    {% if rel.image %}
+                        <img src="{{ rel.image.url }}" class="card-img-top" alt="{{ rel.name }}" style="height: 150px; object-fit: cover;">
+                    {% else %}
+                        <div class="bg-secondary d-flex align-items-center justify-content-center" style="height: 150px;">
+                            <i class="bi bi-image text-white" style="font-size: 2rem;"></i>
+                        </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <h6>{{ rel.name }}</h6>
+                        <p class="card-text">{{ rel.price|floatformat:0 }} $</p>
+                        <a href="{% url 'product_detail' rel.pk %}" class="btn btn-sm btn-outline-info">Ko'rish</a>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+{% endblock %}
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    $('.add-to-cart').click(function() {
+        var productId = $(this).data('product-id');
+        $.ajax({
+            url: '/api/cart/add/',
+            method: 'POST',
+            headers: {'X-CSRFToken': '{{ csrf_token }}'},
+            contentType: 'application/json',
+            data: JSON.stringify({product_id: productId, quantity: 1}),
+            success: function() {
+                alert('Mahsulot savatchaga qo\'shildi!');
+            },
+            error: function(xhr) {
+                alert('Xatolik: ' + xhr.responseText);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

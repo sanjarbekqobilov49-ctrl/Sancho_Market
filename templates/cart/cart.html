@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Savatcha{% endblock %}
+{% block content %}
+<h2>Savatcha</h2>
+{% if items %}
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Mahsulot</th>
+                <th>Narx</th>
+                <th>Miqdor</th>
+                <th>Summa</th>
+                <th>Amal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.price|floatformat:0 }} $</td>
+                <td>
+                    <form method="post" class="d-flex align-items-center">
+                        {% csrf_token %}
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <input type="hidden" name="action" value="update">
+                        <input type="number" name="quantity" value="{{ item.quantity }}" min="0" class="form-control form-control-sm" style="width: 70px;">
+                        <button type="submit" class="btn btn-sm btn-outline-primary ms-2">Yangilash</button>
+                    </form>
+                </td>
+                <td>{{ item.total|floatformat:0 }} $</td>
+                <td>
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                        <input type="hidden" name="action" value="delete">
+                        <button type="submit" class="btn btn-sm btn-danger">O'chirish</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="3" class="text-end"><strong>Jami summa:</strong></td>
+                <td colspan="2"><strong>{{ total|floatformat:0 }} $</strong></td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="card mb-3">
+        <div class="card-header"><h5>Buyurtma ma'lumotlari</h5></div>
+        <div class="card-body">
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="buy">
+                <div class="mb-3">
+                    <label class="form-label">FIO <span class="text-danger">*</span></label>
+                    <input type="text" name="fio" class="form-control" value="{{ fio }}" placeholder="Ism Familiya" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Telefon <span class="text-danger">*</span></label>
+                    <input type="text" name="phone" class="form-control" value="{{ phone }}" placeholder="+998 XX XXX XX XX" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Manzil <span class="text-danger">*</span></label>
+                    <textarea name="address" class="form-control" rows="2" placeholder="Viloyat, shahar, ko'cha ..." required>{{ address }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Telegram (ixtiyoriy)</label>
+                    <input type="text" name="telegram" class="form-control" value="{{ telegram }}" placeholder="@username yoki telefon raqam">
+                </div>
+                <button type="submit" class="btn btn-success btn-lg w-100">Sotib olish</button>
+            </form>
+        </div>
+    </div>
+{% else %}
+    <div class="alert alert-info">Savatchangiz bo'sh.</div>
+    <a href="/" class="btn btn-primary">Mahsulotlarni ko'rish</a>
+{% endif %}
+{% endblock %}
